@@ -9,6 +9,7 @@ export * from './baseline/order-template';
 export * from './baseline/permissions';
 export * from './auth/rbac';
 export * from './common/metric-source';
+export * from './maintenance';
 
 export type { City } from './contract/city';
 export type { Contract, ContractCityAllocation } from './contract/contract';

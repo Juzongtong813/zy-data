@@ -27,7 +27,9 @@ const ImportJobs = lazy(() => import('@/pages/ImportJobs'));
 const CityReporting = lazy(() => import('@/pages/CityReporting'));
 const BizLogin = lazy(() => import('@/pages/biz/BizLogin'));
 const BizPortal = lazy(() => import('@/pages/biz/BizPortal'));
-const BizMaintenancePortal = lazy(() => import('@/pages/biz/BizMaintenancePortal'));
+const MaintenanceHome = lazy(() => import('@/pages/biz/maintenance/MaintenanceHome'));
+const MaintenanceOverview = lazy(() => import('@/pages/biz/maintenance/MaintenanceOverview'));
+const MaintenanceDocuments = lazy(() => import('@/pages/biz/maintenance/MaintenanceDocuments'));
 const BizPlaceholder = lazy(() => import('@/pages/biz/BizPlaceholder'));
 const BizAdmin = lazy(() => import('@/pages/biz/BizAdmin'));
 const BizAuditLogs = lazy(() => import('@/pages/biz/BizAuditLogs'));
@@ -138,7 +140,14 @@ export default function App() {
     <Route path="/biz" element={<BizAnalysisOptionsProvider><BizLayout /></BizAnalysisOptionsProvider>}>
       <Route index element={<Navigate to="/biz/portal" replace />} />
       <Route path="portal" element={<Suspense fallback={<PageLoading />}><BizPortal /></Suspense>} />
-      <Route path="maintenance" element={<Suspense fallback={<PageLoading />}><BizMaintenancePortal /></Suspense>} />
+      <Route path="system" element={<Navigate to="/biz/settings" replace />} />
+      <Route path="maintenance" element={<Navigate to="/biz/maintenance/overview" replace />} />
+      <Route path="maintenance/overview" element={<Suspense fallback={<PageLoading />}><MaintenanceOverview /></Suspense>} />
+      <Route path="maintenance/documents" element={<Suspense fallback={<PageLoading />}><MaintenanceDocuments /></Suspense>} />
+      <Route path="maintenance/records" element={<Navigate to="/biz/maintenance/personnel" replace />} />
+      <Route path="maintenance/personnel" element={<Suspense fallback={<PageLoading />}><MaintenanceHome /></Suspense>} />
+      <Route path="maintenance/vehicles" element={<Suspense fallback={<PageLoading />}><MaintenanceHome /></Suspense>} />
+      <Route path="maintenance/generators" element={<Suspense fallback={<PageLoading />}><MaintenanceHome /></Suspense>} />
       <Route path="placeholder/:code" element={<Suspense fallback={<PageLoading />}><BizPlaceholder /></Suspense>} />
       <Route path="operation" element={<Suspense fallback={<PageLoading />}><BizContracts /></Suspense>} />
       <Route path="contract-overview" element={<Suspense fallback={<PageLoading />}><BizContractOverview /></Suspense>} />
@@ -163,4 +172,3 @@ export default function App() {
     <Route path="/*" element={<LegacyBanner>{protectedRoute}</LegacyBanner>} />
   </Routes></HashRouter>;
 }
-

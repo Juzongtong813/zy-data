@@ -47,6 +47,9 @@ export class BizPortalController {
       .filter((m) => m.level === 'level2' && allowed(m.code))
       .map((m) => ({ id: m.id, code: m.code, name: m.name, level: m.level, parentId: m.parentId, sortOrder: m.sortOrder }));
 
+    if (auth.isSuperAdmin || auth.permissionCodes.has('portal.system.enter')) {
+      level1.push({ id: 'system-settings', code: 'system', name: '系统设置', level: 'level1', sortOrder: 100 });
+    }
     return { level1, level2 };
   }
 

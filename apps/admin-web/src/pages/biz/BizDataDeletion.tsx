@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button, Card, Input, Modal, Select, Space, Spin, Table, Tag, Typography, message } from 'antd';
+import { Button, Card, Cascader, Input, Modal, Select, Space, Spin, Table, Tag, Typography, message } from 'antd';
 import { DeleteOutlined, DownloadOutlined, ReloadOutlined } from '@ant-design/icons';
 import { exportPageRows } from '@/utils/page-export-core';
 import dayjs from 'dayjs';
@@ -16,6 +16,7 @@ export default function BizDataDeletion() {
   const [authorized, setAuthorized] = useState<boolean | null>(null);
   const [resources, setResources] = useState<Array<{ code: BizSuperDeleteResource; label: string }>>([]);
   const [resource, setResource] = useState<BizSuperDeleteResource>('order-import-record');
+  const [resourcePath, setResourcePath] = useState<string[]>([]);
   const [items, setItems] = useState<BizSuperDeleteListItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [targetId, setTargetId] = useState('');
@@ -78,6 +79,23 @@ export default function BizDataDeletion() {
   }
 
   const selectedLabel = resources.find((item) => item.code === resource)?.label ?? resource;
+  const deletionHierarchy = [
+    { value: 'maintenance', label: '维护管理', children: [
+      { value: 'personnel', label: '人员管理', children: [{ value: 'maintenance-personnel', label: '人员记录' }] },
+      { value: 'assets', label: '资产管理', children: [{ value: 'maintenance-vehicle', label: '车辆记录' }, { value: 'maintenance-generator', label: '油机记录' }] },
+    ] },
+    { value: 'operation', label: '经营管理', children: [
+      { value: 'contracts', label: '合同管理', children: ['contract-import-record', 'contract', 'contract-allocation', 'contract-fee-rate', 'contract-alert'].map(code => ({ value: code, label: resources.find(row => row.code === code)?.label ?? code })) },
+      { value: 'orders', label: '订单管理', children: ['order-import-record', 'order-row'].map(code => ({ value: code, label: resources.find(row => row.code === code)?.label ?? code })) },
+      { value: 'completion', label: '完工管理', children: [{ value: 'offline-completion', label: '完工记录' }] },
+      { value: 'costs', label: '成本管理', children: ['cost-entry', 'cost-category'].map(code => ({ value: code, label: resources.find(row => row.code === code)?.label ?? code })) },
+    ] },
+    { value: 'system', label: '系统设置', children: [
+      { value: 'regions', label: '省市设置', children: ['province', 'city', 'city-alias'].map(code => ({ value: code, label: resources.find(row => row.code === code)?.label ?? code })) },
+      { value: 'communications', label: '消息与公告', children: ['announcement', 'announcement-read', 'message'].map(code => ({ value: code, label: resources.find(row => row.code === code)?.label ?? code })) },
+      { value: 'audit', label: '审计日志', children: [{ value: 'operation-log', label: '操作日志' }] },
+    ] },
+  ];
   const columns = [
     { title: '记录', dataIndex: 'label', key: 'label', ellipsis: true },
     { title: '摘要', dataIndex: 'details', key: 'details', ellipsis: true },
@@ -94,7 +112,7 @@ export default function BizDataDeletion() {
       </div>
       <Card>
         <Space wrap style={{ marginBottom: 16 }}>
-          <Select value={resource} style={{ width: 200 }} options={resources.map((item) => ({ value: item.code, label: item.label }))} onChange={(value: BizSuperDeleteResource) => setResource(value)} />
+          <Cascader placeholder="选择门户 / 模块 / 数据内容" value={resourcePath} style={{ width: 340 }} options={deletionHierarchy} displayRender={(labels) => labels.join(' / ')} onChange={(path) => { const nextPath = (path ?? []) as string[]; setResourcePath(nextPath); const code = nextPath[nextPath.length - 1]; if (code && resources.some(item => item.code === code)) { setResource(code as BizSuperDeleteResource); setTargetId(''); } }} />
           <Input value={targetId} onChange={(event) => setTargetId(event.target.value)} placeholder="输入记录 ID 精确删除" style={{ width: 330 }} />
           <Button danger icon={<DeleteOutlined />} disabled={!targetId.trim()} onClick={() => confirmDelete(targetId.trim(), `${selectedLabel}（指定 ID）`)}>删除指定记录</Button>
           <Tag color="red">永久删除</Tag>

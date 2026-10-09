@@ -1,0 +1,3 @@
+import { IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
+export class CreateVehicleDto { @IsNotEmpty() @IsString() @MaxLength(64) plateNumber!: string; @IsNotEmpty() @IsString() @MaxLength(160) orgProvince!: string; @IsNotEmpty() @IsString() @MaxLength(200) orgCompany!: string; @IsNotEmpty() @IsString() @MaxLength(160) orgRegion!: string; @IsOptional() @IsString() vehicleCode?: string; @IsOptional() @IsString() vehicleType?: string; @IsOptional() @IsString() usage?: string; @IsOptional() @IsString() driverMobile?: string; @IsOptional() @IsString() brandModel?: string; @IsOptional() @IsString() fuelType?: string; @IsOptional() @IsString() ownership?: string; }
+export class UpdateVehicleDto extends CreateVehicleDto {}

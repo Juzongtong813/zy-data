@@ -18,18 +18,27 @@ const ROLE_LABEL: Record<string, string> = {
 };
 
 const MODULE_LABEL: Record<string, string> = {
+  engineeringEntry: '工程管理入口', maintenanceEntry: '维护管理入口', operationEntry: '经营管理入口', systemEntry: '系统设置入口',
   home: '经营首页', analysis: '经营分析', contract: '合同管理', order: '订单管理',
   completion: '线下完工', cost: '地市成本', user: '用户管理', settings: '系统设置',
   module: '模块管理', role: '角色管理', region: '省市设置',
-  portal: '一级门户入口', maintenance: '二级门户入口', announcement: '公告发布', message: '消息中心',
+  announcement: '公告发布', message: '消息中心',
+  operationHome: '经营管理 / 首页', operationAnalysis: '经营管理 / 数据分析', operationContract: '经营管理 / 合同管理', operationOrder: '经营管理 / 订单管理', operationCompletion: '经营管理 / 完工管理', operationCost: '经营管理 / 成本管理',
+  systemMessage: '系统设置 / 消息中心', systemAnnouncement: '系统设置 / 公告管理', systemUser: '系统设置 / 账号与权限', systemSettings: '系统设置 / 参数设置', systemRegion: '系统设置 / 省市设置',
 };
 const MODULE_DESCRIPTION: Record<string, string> = {
-  portal: '登录后是否能看到工程管理/维护管理入口', maintenance: '进入维护管理后是否能看到经营管理、资产管理、人员管理入口', home: '门户首页和经营入口', analysis: '经营概览、趋势、地市对比和超额清单', contract: '合同查看、上传、分配和费率维护', order: '订单上传、待维护、作废和导出',
+  engineeringEntry: '独立控制工程管理模块的可见性和访问权限',
+  maintenanceEntry: '独立控制维护管理模块的可见性和访问权限',
+  operationEntry: '独立控制经营管理模块的可见性和访问权限',
+  systemEntry: '独立控制全局系统设置模块的可见性和访问权限',
+  operationHome: '经营管理首页和数据入口', operationAnalysis: '经营概览、趋势、地市对比和超额清单', operationContract: '合同查看、上传、分配和费率维护', operationOrder: '订单上传、维护、作废和导出', operationCompletion: '线下完工填报、提交和审核', operationCost: '地市成本填报、退回和导出',
+  systemMessage: '系统消息和公告查看', systemAnnouncement: '公告编制、发布和撤回', systemUser: '账号、角色、权限和数据范围', systemSettings: '全局参数及预警设置', systemRegion: '省份和地市字典管理',
+  home: '门户首页和经营入口', analysis: '经营概览、趋势、地市对比和超额清单', contract: '合同查看、上传、分配和费率维护', order: '订单上传、待维护、作废和导出',
   completion: '线下完工填报、提交和审核', cost: '地市成本填报、退回和导出', user: '账号创建、停用、密码和数据范围', settings: '系统参数和预警设置',
   module: '业务模块入口配置', role: '角色与账号权限配置', region: '省份与地市字典的新增、修改和删除',
   announcement: '公告草稿、发布、撤回和范围管理', message: '流程消息、公告查看和已读处理',
 };
-const PORTAL_GROUPS = new Set(['portal', 'maintenance']);
+const PORTAL_GROUPS = new Set(['engineeringEntry', 'maintenanceEntry', 'operationEntry', 'systemEntry']);
 
 type PermissionItem = { code: string; name: string; action: string };
 
@@ -39,14 +48,23 @@ function buildPermissionGroups(rows: Array<Record<string, unknown>>): Permission
   const groups = new Map<string, PermissionItem[]>();
   for (const row of rows) {
     const code = String(row.code ?? '');
+    if (['maintenance.asset.enter', 'maintenance.personnel.enter'].includes(code)) continue;
     const match = /^(?:operation\.)?([^.]+)\./.exec(code);
     if (!match) continue;
-    const key = match[1];
+    const entryGroups: Record<string, string> = { 'portal.engineering.enter': 'engineeringEntry', 'portal.maintenance.enter': 'maintenanceEntry', 'maintenance.operation.enter': 'operationEntry' };
+    const operationGroups: Record<string, string> = { analysis: 'operationAnalysis', contract: 'operationContract', order: 'operationOrder', completion: 'operationCompletion', cost: 'operationCost', home: 'operationHome', message: 'systemMessage', announcement: 'systemAnnouncement', user: 'systemUser', role: 'systemUser', module: 'systemUser', settings: 'systemSettings', region: 'systemRegion' };
+    const key = entryGroups[code] ?? operationGroups[match[1]] ?? match[1];
     const list = groups.get(key) ?? [];
     list.push({ code, name: String(row.name ?? code), action: String(row.action ?? '') });
     groups.set(key, list);
   }
-  return Array.from(groups.entries()).map(([key, permissions]) => ({ key, label: MODULE_LABEL[key] ?? key, description: MODULE_DESCRIPTION[key] ?? '该业务模块的访问和操作权限', permissions }));
+  groups.set('systemEntry', [{ code: 'portal.system.enter', name: '系统设置入口', action: 'enter' }]);
+  const portalOrder = ['engineeringEntry', 'maintenanceEntry', 'operationEntry', 'systemEntry'];
+  return Array.from(groups.entries()).map(([key, permissions]) => ({ key, label: MODULE_LABEL[key] ?? key, description: MODULE_DESCRIPTION[key] ?? '该业务模块的访问和操作权限', permissions })).sort((a, b) => {
+    const ai = portalOrder.indexOf(a.key); const bi = portalOrder.indexOf(b.key);
+    if (ai >= 0 || bi >= 0) return (ai < 0 ? 99 : ai) - (bi < 0 ? 99 : bi);
+    return a.label.localeCompare(b.label, 'zh-CN');
+  });
 }
 
 export default function BizAdmin() {
@@ -154,7 +172,7 @@ export default function BizAdmin() {
     const levels: Record<string, 'none' | 'read' | 'edit'> = {};
     for (const group of permissionGroups) {
       const readable = group.permissions.some((permission) => (permission.action === 'read' || permission.action === 'enter') && effective.has(permission.code));
-      const writable = group.permissions.some((permission) => permission.action !== 'read' && effective.has(permission.code));
+      const writable = group.permissions.some((permission) => permission.action !== 'read' && permission.action !== 'enter' && effective.has(permission.code));
       levels[group.key] = writable ? 'edit' : readable ? 'read' : 'none';
     }
     setModuleLevels(levels);
@@ -189,7 +207,7 @@ export default function BizAdmin() {
   };
 
   const onSavePermissions = async () => {
-    if (!permDetail) return;
+    if (!permDetail || permDetail.roleCode === 'super_admin') return;
     setPermSaving(true);
     try {
       const generated = permissionGroups.flatMap((group) => {
@@ -316,9 +334,10 @@ export default function BizAdmin() {
                 { title: '功能分类', key: 'label', width: 260, render: (_: unknown, row: PermissionGroup) => <Space direction="vertical" size={0}><Space size={4}><Tag color={PORTAL_GROUPS.has(row.key) ? 'purple' : 'blue'}>{PORTAL_GROUPS.has(row.key) ? '门户入口' : '业务功能'}</Tag><Text strong>{row.label}</Text></Space><Text type="secondary" style={{ fontSize: 12 }}>{row.description}</Text></Space> },
                 { title: '当前级别', key: 'level', width: 150, render: (_: unknown, row: PermissionGroup) => (
                   <Select
-                    value={moduleLevels[row.key] ?? 'none'}
+                    value={permDetail.roleCode === 'super_admin' ? (PORTAL_GROUPS.has(row.key) ? 'read' : 'edit') : (moduleLevels[row.key] ?? 'none')}
+                    disabled={permDetail.roleCode === 'super_admin'}
                     style={{ width: 130 }}
-                    options={[{ value: 'none', label: '无权访问' }, { value: 'read', label: '可进入/查看' }, { value: 'edit', label: '可操作' }]}
+                    options={PORTAL_GROUPS.has(row.key) ? [{ value: 'none', label: '无权访问' }, { value: 'read', label: '可进入' }] : [{ value: 'none', label: '无权访问' }, { value: 'read', label: '可查看' }, { value: 'edit', label: '可操作' }]}
                     onChange={(value: 'none' | 'read' | 'edit') => setModuleLevels((prev) => ({ ...prev, [row.key]: value }))}
                   />
                 ) },

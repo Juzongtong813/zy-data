@@ -30,5 +30,7 @@
   "028_biz_fee_rate_import_tasks": "147e588f8baa09b9f8a420aa91779f8d2b51147b37deb7563634580bd3a4f74f",
   "029_biz_account_scope_v2": "ae7b9ab315c76a337487f7a30593038f7e0346acd1650b190e5ba99fb8a74a59",
   "030_order_snapshot": "7ad960ef8e8530283cf80e079ce6b575542e9ebe8f527575d697d83472cd88f1",
-  "031_order_upload_parts": "0a3565eccb9b2ca7df62f92477bd551191bb79e9d2c642bf94fe7e73b1efce97"
+  "031_order_upload_parts": "0a3565eccb9b2ca7df62f92477bd551191bb79e9d2c642bf94fe7e73b1efce97",
+  "032_maintenance_personnel": "46d6a2ad89389f037304f1c6ce68ffd2c02eccba8252ce20f44f0a4bca50aac1",
+  "033_maintenance_vehicle_generator": "5292145a5a8218da3fa7f388e80fb24960ac097765fe5ca4e5d0de37f4706f4e"
 }

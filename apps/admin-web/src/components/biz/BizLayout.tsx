@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Avatar, Button, Drawer, Dropdown, Form, Input, Layout, Menu, Modal, Space, Typography, message, type MenuProps } from 'antd';
+import { Avatar, Button, Drawer, Dropdown, Form, Input, Layout, Menu, Modal, Result, Space, Spin, Typography, message, type MenuProps } from 'antd';
 import {
   ApartmentOutlined, BarChartOutlined, FileTextOutlined, InboxOutlined, SettingOutlined,
   BellOutlined, DeleteOutlined, HomeOutlined, KeyOutlined, TeamOutlined, UserOutlined, WalletOutlined, MenuOutlined,
@@ -157,6 +157,11 @@ export default function BizLayout() {
     { key: '/biz/orders', label: '订单管理', icon: <InboxOutlined />, permission: 'operation.order.upload' },
     { key: '/biz/offline-completions', label: '线下完工', icon: <TeamOutlined />, permission: 'operation.completion.read' },
   ], permSet, isSuper, me?.roleCode);
+  const maintenanceItems: NonNullable<MenuProps['items']> = [
+    { key: '/biz/maintenance/personnel', label: '人员管理', icon: <TeamOutlined /> },
+    { key: '/biz/maintenance/vehicles', label: '资产管理', icon: <InboxOutlined /> },
+    { key: '/biz/maintenance/generators', label: '油机管理', icon: <SettingOutlined /> },
+  ];
 
   const businessItems: NonNullable<MenuProps['items']> = [
     ...(analysisItems.length > 0 ? [{ key: 'biz-analysis', label: '经营管理', icon: <BarChartOutlined />, children: analysisItems }] : []),
@@ -167,13 +172,23 @@ export default function BizLayout() {
   const menuItems: MenuProps['items'] = [
     ...messageItems,
     ...businessItems,
-    ...systemItems,
+  ];
+  const isMaintenanceModule = location.pathname.startsWith('/biz/maintenance');
+  const isSystemModule = ['/biz/settings', '/biz/admin', '/biz/region-settings', '/biz/audit-logs', '/biz/data-delete'].some(path => location.pathname === path || location.pathname.startsWith(`${path}/`));
+  const moduleName = isMaintenanceModule ? '维护管理' : isSystemModule ? '系统设置' : '经营管理';
+  const standaloneMaintenanceItems: MenuProps['items'] = [
+    { key: '/biz/maintenance/overview', label: '数据总览', icon: <BarChartOutlined /> },
+    { key: '/biz/maintenance/documents', label: '资料管理', icon: <FileTextOutlined /> },
+    { key: '/biz/maintenance/personnel', label: '人员管理', icon: <TeamOutlined /> },
+    { key: 'maintenance-assets', label: '资产管理', icon: <InboxOutlined />, children: [
+      { key: '/biz/maintenance/vehicles', label: '车辆管理', icon: <InboxOutlined /> },
+      { key: '/biz/maintenance/generators', label: '油机管理', icon: <SettingOutlined /> },
+    ] },
   ];
   // 移动端与桌面端保持同一层级，避免两种导航结构产生不同入口。
   const mobileMenuItems: MenuProps['items'] = [
     ...messageItems,
     ...businessItems,
-    ...systemItems,
   ];
 
   // 叶子路由必须优先于父路由匹配；此前 /biz/analysis/trend 会被 /biz/analysis 抢占，
@@ -182,6 +197,7 @@ export default function BizLayout() {
     '/biz/analysis/overruns', '/biz/analysis/cities', '/biz/analysis/trend', '/biz/analysis',
     '/biz/contract-overview', '/biz/fee-rates', '/biz/operation', '/biz/offline-completions', '/biz/orders',
     '/biz/costs', '/biz/messages', '/biz/settings', '/biz/admin', '/biz/region-settings', '/biz/audit-logs', '/biz/data-delete',
+    '/biz/maintenance/overview', '/biz/maintenance/documents', '/biz/maintenance/personnel', '/biz/maintenance/vehicles', '/biz/maintenance/generators',
   ];
   const selectedKey = navigationPaths.find((path) => location.pathname === path || location.pathname.startsWith(`${path}/`));
   const activeGroupKey = location.pathname.startsWith('/biz/analysis')
@@ -193,12 +209,14 @@ export default function BizLayout() {
       ? 'biz-cost'
       : location.pathname.startsWith('/biz/orders') || location.pathname.startsWith('/biz/offline-completions')
         ? 'biz-completion'
+        : location.pathname.startsWith('/biz/maintenance')
+          ? 'maintenance-assets'
         : undefined;
   const [openKeys, setOpenKeys] = useState<string[]>([]);
   const visibleOpenKeys = [...new Set([...openKeys, ...(activeGroupKey ? [activeGroupKey] : [])])];
 
   // 一级、二级门户独立呈现模块卡片，进入具体模块后才显示业务侧栏。
-  const isModulePortal = location.pathname === '/biz/portal' || location.pathname === '/biz/maintenance';
+  const isModulePortal = location.pathname === '/biz/portal';
 
   const menu = (
     <Menu
@@ -207,7 +225,7 @@ export default function BizLayout() {
       theme="dark"
       style={{ borderInlineEnd: 'none' }}
       selectedKeys={selectedKey ? [String(selectedKey)] : []}
-      items={isMobile ? mobileMenuItems : menuItems}
+      items={isMaintenanceModule ? standaloneMaintenanceItems : isSystemModule ? systemItems : (isMobile ? mobileMenuItems : menuItems)}
       openKeys={isMobile ? undefined : visibleOpenKeys}
       onOpenChange={isMobile ? undefined : (keys) => setOpenKeys(keys as string[])}
       onClick={({ key }) => { if (String(key).startsWith('/biz/')) navigate(String(key)); if (isMobile) setMobileOpen(false); }}
@@ -215,6 +233,13 @@ export default function BizLayout() {
   );
 
   if (isModulePortal) return <Outlet />;
+  if (!me) return <div style={{ padding: 48, textAlign: 'center' }}><Spin /></div>;
+  const modulePermission = isSystemModule ? 'portal.system.enter' : isMaintenanceModule ? 'portal.maintenance.enter'
+    : location.pathname === '/biz/placeholder/engineering' ? 'portal.engineering.enter'
+      : /^\/biz\/(operation|analysis|contract-overview|fee-rates|orders|offline-completions|costs)(\/|$)/.test(location.pathname) ? 'maintenance.operation.enter' : undefined;
+  if (me && modulePermission && !isSuper && !permSet.has(modulePermission)) {
+    return <Result status="403" title="没有访问该模块的权限" extra={<Button onClick={() => navigate('/biz/portal')}>返回门户</Button>} />;
+  }
 
   return (
     <BizSnapshotProvider>
@@ -223,7 +248,7 @@ export default function BizLayout() {
         <Sider collapsible collapsed={collapsed} onCollapse={setCollapsed} width={200} style={{ position: 'sticky', top: 0, height: '100vh' }}>
           <div className="biz-sider-brand">
             <img className="biz-sider-logo" src={`${import.meta.env.BASE_URL}logo.jpg`} alt="中屹技术" />
-            {!collapsed && <span className="biz-sider-name">经营管理</span>}
+            {!collapsed && <span className="biz-sider-name">{moduleName}</span>}
           </div>
           {menu}
         </Sider>
@@ -232,10 +257,10 @@ export default function BizLayout() {
         <Header className="biz-header" style={{ background: '#fff', padding: '0 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e8edf0', height: 48, lineHeight: '48px' }}>
           <Space>
             {isMobile && <Button type="text" icon={<MenuOutlined />} onClick={() => setMobileOpen(true)} />}
-            {isMobile && <Text strong>经营数据中台</Text>}
+            {isMobile && <Text strong>{moduleName}</Text>}
             <Button type="text" icon={<HomeOutlined />} onClick={() => navigate('/biz/portal')}>门户首页</Button>
           </Space>
-          <SnapshotStatusBar />
+          {!isMaintenanceModule && !isSystemModule && <SnapshotStatusBar />}
           <Dropdown
             menu={{ items: [
               { key: 'password', icon: <KeyOutlined />, label: '修改密码', onClick: () => setPasswordOpen(true) },
@@ -262,7 +287,7 @@ export default function BizLayout() {
         width={240}
         styles={{ body: { padding: 0, background: '#001529' } }}
       >
-        <div style={{ padding: 16, fontWeight: 600, color: '#fff' }}>经营管理</div>
+        <div style={{ padding: 16, fontWeight: 600, color: '#fff' }}>{moduleName}</div>
         {menu}
       </Drawer>
       <Modal

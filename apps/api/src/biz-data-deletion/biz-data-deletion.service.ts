@@ -24,8 +24,12 @@ import { BizAnnouncementEntity } from '../biz-communications/biz-announcement.en
 import { BizAnnouncementReadEntity } from '../biz-communications/biz-announcement-read.entity';
 import { BizMessageEntity } from '../reminders/biz-message.entity';
 import { BizOperationLogEntity } from '../operation-logs/biz-operation-log.entity';
+import { MaintenancePersonnelEntity } from '../maintenance/personnel/personnel.entity';
+import { MaintenanceVehicleEntity } from '../maintenance/vehicles/vehicle.entity';
+import { MaintenanceGeneratorEntity } from '../maintenance/generators/generator.entity';
 
 export const SUPER_DELETABLE_RESOURCES = [
+  'maintenance-personnel', 'maintenance-vehicle', 'maintenance-generator',
   'order-import-record',
   'order-row',
   'contract-import-record',
@@ -82,6 +86,9 @@ export class BizDataDeletionService {
 
   resources(): SuperDeleteResourceMeta[] {
     return [
+      { code: 'maintenance-personnel', label: '维护管理 / 人员' },
+      { code: 'maintenance-vehicle', label: '维护管理 / 车辆' },
+      { code: 'maintenance-generator', label: '维护管理 / 油机' },
       { code: 'order-import-record', label: '订单上传记录' },
       { code: 'order-row', label: '订单行' },
       { code: 'contract-import-record', label: '合同上传记录' },
@@ -106,6 +113,9 @@ export class BizDataDeletionService {
     this.assertSuperAdmin(auth);
     const normalized = this.normalizeResource(resource);
     switch (normalized) {
+      case 'maintenance-personnel': return (await this.dataSource.getRepository(MaintenancePersonnelEntity).find({ take: 200, order: { createdAt: 'DESC' } })).map(item => ({ id: item.id, label: item.name, details: `${item.personnelCode} / ${item.orgRegion}`, createdAt: item.createdAt }));
+      case 'maintenance-vehicle': return (await this.dataSource.getRepository(MaintenanceVehicleEntity).find({ take: 200, order: { createdAt: 'DESC' } })).map(item => ({ id: item.id, label: item.plateNumber, details: item.orgRegion, createdAt: item.createdAt }));
+      case 'maintenance-generator': return (await this.dataSource.getRepository(MaintenanceGeneratorEntity).find({ take: 200, order: { createdAt: 'DESC' } })).map(item => ({ id: item.id, label: item.generatorCode, details: item.orgRegion, createdAt: item.createdAt }));
       case 'order-import-record': return (await this.orderBatchRepo.find({ order: { uploadedAt: 'DESC' }, take: 200 })).map((item) => ({ id: item.id, label: item.filename, details: `${item.status} / ${item.totalRows} 行`, createdAt: item.uploadedAt }));
       case 'order-row': return (await this.orderRowRepo.find({ order: { createdAt: 'DESC' }, take: 200 })).map((item) => ({ id: item.id, label: item.purchaseOrderNo || `订单行 ${item.sourceRowNo}`, details: `${item.businessMonth ?? '-'} / ${item.validationStatus}`, createdAt: item.createdAt }));
       case 'contract-import-record': return (await this.contractImportRepo.find({ order: { uploadedAt: 'DESC' }, take: 200 })).map((item) => ({ id: item.id, label: item.filename, details: `${item.status} / ${item.totalRows} 行`, createdAt: item.uploadedAt }));
@@ -132,7 +142,7 @@ export class BizDataDeletionService {
     const targetId = id.trim();
     if (!targetId) throw new BadRequestException('缺少待删除记录 ID');
     const deleted = await this.dataSource.transaction((manager) => this.deleteInTransaction(manager, normalized, targetId, auth.userId));
-    await this.aggregates.recalcInternal({});
+    if (!normalized.startsWith('maintenance-')) await this.aggregates.recalcInternal({});
     return { resource: normalized, id: targetId, deleted };
   }
 
@@ -156,6 +166,18 @@ export class BizDataDeletionService {
     };
 
     switch (resource) {
+      case 'maintenance-personnel':
+        await requireTarget(MaintenancePersonnelEntity, '人员');
+        await remove(MaintenancePersonnelEntity, { id }, 'maintenancePersonnel');
+        break;
+      case 'maintenance-vehicle':
+        await requireTarget(MaintenanceVehicleEntity, '车辆');
+        await remove(MaintenanceVehicleEntity, { id }, 'maintenanceVehicles');
+        break;
+      case 'maintenance-generator':
+        await requireTarget(MaintenanceGeneratorEntity, '油机');
+        await remove(MaintenanceGeneratorEntity, { id }, 'maintenanceGenerators');
+        break;
       case 'order-import-record':
         await requireTarget(BizOrderImportBatchEntity, '订单上传记录');
         await remove(BizOrderImportErrorEntity, { batchId: id }, 'orderImportErrors');

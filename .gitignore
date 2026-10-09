@@ -24,10 +24,23 @@ pnpm-debug.log*
 .turbo/
 *.tsbuildinfo
 .artifacts/
+**/*.js.map
+**/*.d.ts.map
 
-# Development database
+# Local runtime/test data
+apps/api/data/
 *.sqlite
 *.sqlite3
+
+# Temporary deployment archives
+biz-reporting-system-clean-deploy.zip
+
+# One-off local verification scripts
+scripts/tmp_*.mjs
+apps/api/tmp_*.mjs
+
+# Local debug snippets
+apps/api/debug-*.cjs
 
 # Uploads
 uploads/

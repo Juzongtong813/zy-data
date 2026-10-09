@@ -14,6 +14,8 @@ dist
 
 # 排除本地编译产物（防止污染 Docker 构建上下文）
 **/*.tsbuildinfo
+**/*.js.map
+**/*.d.ts.map
 packages/**/src/**/*.js
 packages/**/src/**/*.d.ts
 packages/**/src/**/*.js.map
@@ -35,9 +37,16 @@ deploy-flat/
 deploy-output/
 deploy-test/
 scripts/oneoff/
+scripts/tmp_*.mjs
+apps/api/tmp_*.mjs
+apps/api/debug-*.cjs
 **/*.bak
 .research-*/
 .artifacts/
 .order-chunks/
 .tmp-orders.xlsx
+*.sqlite
+*.sqlite3
+apps/api/data/
+biz-reporting-system-clean-deploy.zip
 

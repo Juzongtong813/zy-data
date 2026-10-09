@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Button, Card, Empty, Result, Spin, Typography } from 'antd';
 import axios from 'axios';
-import { ApartmentOutlined, BarChartOutlined, ToolOutlined } from '@ant-design/icons';
+import { ApartmentOutlined, BarChartOutlined, SettingOutlined, ToolOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { bizMe, bizPortalModules, type BizModuleItem } from '@/api/biz.api';
 import { clearBizToken } from '@/utils/biz-auth';
@@ -13,6 +13,7 @@ const MODULE_ICON: Record<string, React.ReactNode> = {
   engineering: <ToolOutlined style={{ fontSize: 28 }} />,
   maintenance: <ApartmentOutlined style={{ fontSize: 28 }} />,
   operation: <BarChartOutlined style={{ fontSize: 28 }} />,
+  system: <SettingOutlined style={{ fontSize: 28 }} />,
 };
 
 /** 一级模块门户（新基线）：登录后始终进入；只展示有权模块 */
@@ -76,7 +77,7 @@ export default function BizPortal() {
             <Card
               key={m.code}
               hoverable
-              onClick={() => navigate(m.code === 'maintenance' ? '/biz/maintenance' : m.code === 'operation' ? '/biz/operation' : `/biz/placeholder/${m.code}`)}
+              onClick={() => navigate(m.code === 'system' ? '/biz/system' : m.code === 'maintenance' ? '/biz/maintenance' : m.code === 'operation' ? '/biz/operation' : `/biz/placeholder/${m.code}`)}
               style={{ textAlign: 'center', padding: 16 }}
             >
               <div className="biz-module-icon" style={{ marginBottom: 8 }}>{MODULE_ICON[m.code] ?? null}</div>

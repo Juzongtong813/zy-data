@@ -366,10 +366,7 @@ rules/cloudbase-agent/ts/server-quickstart.md
 rules/cloudbase-agent/ts/skill.md
 rules/cloudbase-agent/ts/ui-clients.md
 rules/cloudbase-agent/ts/ui-miniprogram.md
-rules/cloudbase-agent-ts/adapter-development.md
-rules/cloudbase-agent-ts/adapter-langchain.md
 rules/cloudbase-agent-ts/adapter-langgraph.md
-rules/cloudbase-agent-ts/agui-protocol.md
 rules/cloudbase-agent-ts/rule.md
 rules/cloudbase-agent-ts/server-quickstart.md
 rules/cloudbase-agent-ts/ui-clients.md
@@ -429,11 +426,7 @@ rules/no-sql-web-sdk/pagination.md
 rules/no-sql-web-sdk/realtime.md
 rules/no-sql-web-sdk/rule.md
 rules/no-sql-web-sdk/security-rules.md
-rules/no-sql-wx-mp-sdk/aggregation.md
-rules/no-sql-wx-mp-sdk/complex-queries.md
 rules/no-sql-wx-mp-sdk/crud-operations.md
-rules/no-sql-wx-mp-sdk/geolocation.md
-rules/no-sql-wx-mp-sdk/pagination.md
 rules/no-sql-wx-mp-sdk/rule.md
 rules/no-sql-wx-mp-sdk/security-rules.md
 rules/ops-inspector/rule.md

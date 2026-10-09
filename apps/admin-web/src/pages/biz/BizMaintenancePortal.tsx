@@ -72,7 +72,7 @@ export default function BizMaintenancePortal() {
             <Card
               key={m.code}
               hoverable
-              onClick={() => navigate(`/biz/placeholder/${m.code}`)}
+              onClick={() => navigate(m.code === 'personnel' || m.code === 'asset' ? '/biz/maintenance/records' : `/biz/placeholder/${m.code}`)}
               style={{ textAlign: 'center', padding: 16 }}
             >
               <div className="biz-module-icon" style={{ marginBottom: 8 }}>{MODULE_ICON[m.code] ?? null}</div>

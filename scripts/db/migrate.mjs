@@ -703,6 +703,23 @@ async function inspectState(version) {
       adapter.indexExists('biz_order_upload_parts', 'idx_order_upload_created'),
     ]);
   }
+  if (version === '032_maintenance_personnel') {
+    return allOrNothing([
+      adapter.tableExists('maintenance_personnel'),
+      adapter.indexExists('maintenance_personnel', 'idx_maintenance_personnel_org_status'),
+      adapter.columnExists('maintenance_personnel', 'personnel_code'),
+      adapter.columnExists('maintenance_personnel', 'org_company'),
+      adapter.columnExists('maintenance_personnel', 'org_region'),
+    ]);
+  }
+  if (version === '033_maintenance_vehicle_generator') {
+    return allOrNothing([
+      adapter.tableExists('maintenance_vehicles'),
+      adapter.tableExists('maintenance_generators'),
+      adapter.columnExists('maintenance_vehicles', 'plate_number'),
+      adapter.columnExists('maintenance_generators', 'generator_code'),
+    ]);
+  }
   fail(`STATE_CHECK_MISSING version=${version}`);
 }
 

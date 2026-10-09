@@ -15,15 +15,35 @@ const ROLE_LABEL: Record<string, string> = {
 };
 
 const ACTION_LABEL: Record<string, string> = {
-  'auth.login.success': '登录成功',
   'auth.login.failed': '登录失败',
+  'auth.login.success': '登录成功',
+  'user.permission_overrides': '调整账号权限',
+  'user.access.update': '调整账号范围',
+  'auth.password.changed': '修改登录密码',
+  'auth.password.reset': '重置登录密码',
+  'user.create': '新增系统账号', 'user.status.update': '调整账号状态', 'user.delete': '删除系统账号',
+  'user.permission.update': '调整账号权限', 'user.data_scope.update': '调整数据范围',
+  'settings.update': '修改系统设置', 'region.create': '新增省市信息', 'region.update': '修改省市信息',
+  'contract.create': '新增合同', 'contract.update': '修改合同', 'contract.void': '作废合同',
+  'order_batch.delete_failed': '删除订单批次失败', 'order_batch.void': '作废订单批次',
+  'cost.create': '新增成本记录', 'cost.update': '修改成本记录', 'cost.void': '作废成本记录',
+  'offline.approve': '审核线下完工', 'offline.submit': '提交线下完工',
 };
+const OBJECT_LABEL: Record<string, string> = { user: '系统账号', permission: '账号权限', contract: '合同', order_batch: '订单批次', order_row: '订单明细', cost_entry: '成本记录', offline_completion: '线下完工记录', settings: '系统设置', announcement: '公告', message: '站内消息', maintenance_personnel: '维护人员', maintenance_vehicle: '维护车辆', maintenance_generator: '维护油机' };
 
 type LogRow = Record<string, unknown>;
 
-function formatAction(value: unknown): string {
-  return ACTION_LABEL[String(value)] ?? String(value ?? '-');
+function formatAction(value: unknown, summary?: unknown): string {
+  const code = String(value ?? '');
+  if (ACTION_LABEL[code]) return ACTION_LABEL[code];
+  const parts = code.split('.');
+  const action = ({ create: '新增', update: '修改', delete: '删除', void: '作废', submit: '提交', approve: '审核', reject: '退回', publish: '发布', login: '登录', read: '查看' } as Record<string, string>)[parts[parts.length - 1] ?? ''];
+  const object = OBJECT_LABEL[parts[0]] ?? parts[0];
+  const readableSummary = String(summary ?? '').replace(/[0-9a-f]{8}-[0-9a-f-]{27,}/gi, '').replace(/\b[a-z0-9_-]{24,}\b/gi, '').replace(/[{}"\[\]]/g, '').trim();
+  return action ? `${action}${object}` : (readableSummary || '其他操作');
 }
+
+function readableObject(value: unknown) { const raw = String(value ?? ''); return OBJECT_LABEL[raw] ?? OBJECT_LABEL[raw.replace(/-/g, '_')] ?? '业务记录'; }
 
 export default function BizAuditLogs() {
   const canRead = useBizPermission('operation.user.manage');
@@ -91,10 +111,10 @@ export default function BizAuditLogs() {
   const accountSummary = useMemo(() => {
     const map = new Map<string, { key: string; username: string; name: string; roleCode: string; cityName: string; count: number; latest: string }>();
     for (const row of logs) {
-      const key = String(row.operatorUserId ?? '');
+      const key = String(row.username ?? row.operatorName ?? '未知账号');
       const current = map.get(key) ?? {
         key,
-        username: String(row.username ?? '-'),
+        username: String(row.username ?? row.operatorName ?? '未知账号'),
         name: String(row.operatorName ?? '-'),
         roleCode: String(row.roleCode ?? ''),
         cityName: String(row.cityName ?? '-'),
@@ -205,10 +225,9 @@ export default function BizAuditLogs() {
             { title: '角色', dataIndex: 'roleCode', render: (value: string) => ROLE_LABEL[value] ?? value },
             { title: '地市', dataIndex: 'cityName' },
             { title: '动作', dataIndex: 'actionType', render: formatAction },
-            { title: '对象', dataIndex: 'targetType' },
+            { title: '对象', dataIndex: 'targetType', render: readableObject },
             { title: '操作对象', dataIndex: 'targetDisplay', width: 260, render: (value: string) => <Text ellipsis={{ tooltip: value }}>{value}</Text> },
-            { title: '原始对象 ID', dataIndex: 'targetId', width: 190, render: (value: string) => <Input size="small" readOnly value={value} style={{ width: 180 }} /> },
-            { title: '结果', dataIndex: 'resultStatus', render: (value: string) => <Tag color={value === 'success' ? 'green' : 'red'}>{value === 'success' ? '成功' : value === 'failed' ? '失败' : value === 'rejected' ? '已拒绝' : value}</Tag> },
+            { title: '结果', dataIndex: 'resultStatus', render: (value: string) => <Tag color={value === 'success' ? 'green' : 'red'}>{value === 'success' ? '成功' : value === 'failed' ? '失败' : value === 'rejected' ? '已拒绝' : '处理中'}</Tag> },
           ]}
         />
       </Card>

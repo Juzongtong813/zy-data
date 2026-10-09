@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { OperationLogEntity } from '../common/entities/operation-log.entity';
 import { OperationLogListRequest, OperationLogListResponse } from '@biz-reporting/shared-types';
+import { BizOperationLogEntity } from './biz-operation-log.entity';
 
 @Injectable()
 export class OperationLogsService {
@@ -93,5 +94,27 @@ export class OperationLogsService {
     }));
 
     return { items, total, page, pageSize };
+  }
+
+  async listBiz(params: OperationLogListRequest) {
+    const { page = 1, pageSize = 20, ...filters } = params;
+    const query = this.repo.manager.getRepository(BizOperationLogEntity).createQueryBuilder('log')
+      .leftJoin('biz_users', 'u', 'u.id = log.operatorUserId')
+      .leftJoin('biz_user_roles', 'ur', 'ur.user_id = u.id AND ur.is_primary = 1')
+      .select(['log.id AS id', 'log.operatorUserId AS operatorUserId', 'log.actionType AS actionType', 'log.targetType AS targetType', 'log.targetId AS targetId', 'log.summaryBefore AS summaryBefore', 'log.summaryAfter AS summaryAfter', 'log.resultStatus AS resultStatus', 'log.createdAt AS createdAt', 'u.username AS username', 'u.name AS operatorName', 'ur.roleCode AS roleCode']);
+    if (filters.actionType) query.andWhere('log.actionType = :actionType', { actionType: filters.actionType });
+    if (filters.targetType) query.andWhere('log.targetType = :targetType', { targetType: filters.targetType });
+    if (filters.operatorUserId) query.andWhere('log.operatorUserId = :operatorUserId', { operatorUserId: filters.operatorUserId });
+    if (filters.dateFrom) query.andWhere('log.createdAt >= :dateFrom', { dateFrom: new Date(filters.dateFrom) });
+    if (filters.dateTo) query.andWhere('log.createdAt <= :dateTo', { dateTo: new Date(filters.dateTo) });
+    const total = await query.getCount();
+    const items = await query.orderBy('log.createdAt', 'DESC').skip((page - 1) * pageSize).take(pageSize).getRawMany();
+    const roleNames: Record<string, string> = { super_admin: '超级管理员', admin: '省级运营管理员', contract_manager: '合同管理员', city_user: '地市用户' };
+    return { items: items.map(row => ({
+      id: row.id, operatorUserId: row.operatorUserId, username: row.username ?? '未知账号', operatorName: row.operatorName ?? '未知姓名', roleCode: roleNames[row.roleCode] ?? '其他角色',
+      actionType: row.actionType, targetType: row.targetType, targetId: row.targetId,
+      targetDisplay: row.summaryAfter || row.summaryBefore || null, summaryText: row.summaryAfter || row.summaryBefore || null,
+      resultStatus: row.resultStatus, createdAt: row.createdAt,
+    })), total, page, pageSize };
   }
 }

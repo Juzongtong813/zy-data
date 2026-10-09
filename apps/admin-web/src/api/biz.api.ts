@@ -138,6 +138,7 @@ export function bizAdminUpdateCity(id: string, dto: Partial<{ provinceId: string
 export function bizAdminDeleteCity(id: string): Promise<{ ok: boolean }> { return request.delete(`/biz/admin/cities/${id}`).then((r) => r.data); }
 
 export type BizSuperDeleteResource =
+  | 'maintenance-personnel' | 'maintenance-vehicle' | 'maintenance-generator'
   | 'order-import-record' | 'order-row' | 'contract-import-record' | 'contract'
   | 'contract-allocation' | 'contract-fee-rate' | 'contract-alert' | 'offline-completion'
   | 'cost-entry' | 'cost-category' | 'province' | 'city' | 'city-alias'

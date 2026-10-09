@@ -35,6 +35,7 @@ import { PermissionsGuard } from './common/guards/permissions.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 import { RequestIdMiddleware } from './common/http/request-id.middleware';
 import { HttpLoggingInterceptor } from './common/http/http-logging.interceptor';
+import { MaintenanceModule } from './maintenance/maintenance.module';
 
 @Module({
   imports: [
@@ -133,6 +134,10 @@ import { HttpLoggingInterceptor } from './common/http/http-logging.interceptor';
     BizAggregatesModule,
     BizCommunicationsModule,
     BizDataDeletionModule,
+    MaintenanceModule,
+    BizCommunicationsModule,
+    BizDataDeletionModule,
+    MaintenanceModule,
   ],
   controllers: [AppController],
   providers: [
